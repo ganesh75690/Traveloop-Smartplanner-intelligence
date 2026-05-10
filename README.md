@@ -11,7 +11,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 
-[Live Demo](https://travelloop-demo.vercel.app) | [Documentation](#documentation) | [Report Bug](https://github.com/ganesh75690/Traveloop-Smartplanner-intelligence/issues) | [Request Feature](https://github.com/ganesh75690/Traveloop-Smartplanner-intelligence/issues)
+[Live Demo](https://dancing-raindrop-850723.netlify.app/) | [Documentation](#documentation) | [Report Bug](https://github.com/ganesh75690/Traveloop-Smartplanner-intelligence/issues) | [Request Feature](https://github.com/ganesh75690/Traveloop-Smartplanner-intelligence/issues)
 
 </div>
 
