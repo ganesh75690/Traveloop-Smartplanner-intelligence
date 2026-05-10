@@ -15,19 +15,6 @@
 
 </div>
 
-## 📖 Table of Contents
-
-- [✨ Features](#-features)
-- [🚀 Quick Start](#-quick-start)
-- [📋 Prerequisites](#-prerequisites)
-- [🛠️ Installation](#️-installation)
-- [🔧 Configuration](#-configuration)
-- [🎮 Usage](#-usage)
-- [🏗️ Project Structure](#️-project-structure)
-- [🤝 Contributing](#-contributing)
-- [📝 License](#-license)
-- [🙏 Acknowledgments](#-acknowledgments)
-
 ---
 ### Overview :
 
