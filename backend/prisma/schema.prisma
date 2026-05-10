@@ -1,0 +1,558 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// User & Authentication Models
+// ==========================================
+
+model User {
+  id                String    @id @default(uuid())
+  email             String    @unique
+  password          String
+  name              String
+  role              UserRole  @default(USER)
+  isActive          Boolean   @default(true)
+  isEmailVerified   Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  lastLogin         DateTime?
+  
+  // Profile
+  profile           Profile?
+  
+  // Preferences
+  preferences       UserPreferences?
+  
+  // Related Entities
+  trips             Trip[]
+  expenses          Expense[]
+  packingItems      PackingItem[]
+  journalEntries    JournalEntry[]
+  communityPosts    CommunityPost[]
+  comments          Comment[]
+  likes             Like[]
+  notifications     Notification[]
+  supportTickets    SupportTicket[]
+  feedback          Feedback[]
+  budgetPlans       BudgetPlan[]
+  
+  @@map("users")
+}
+
+model Profile {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  avatar      String?
+  bio         String?
+  phone       String?
+  address     String?
+  city        String?
+  country     String?
+  dateOfBirth DateTime?
+  
+  @@map("profiles")
+}
+
+model UserPreferences {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  language        String   @default("en")
+  currency        String   @default("INR")
+  darkMode        Boolean  @default(false)
+  notifications   Boolean  @default(true)
+  emailAlerts     Boolean  @default(true)
+  
+  @@map("user_preferences")
+}
+
+// ==========================================
+// Trip Models
+// ==========================================
+
+model Trip {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title           String
+  description     String?
+  destination     String
+  country         String?
+  tripType        TripType     @default(DOMESTIC)
+  category        TripCategory @default(LEISURE)
+  
+  startDate       DateTime
+  endDate         DateTime?
+  duration        Int          // in days
+  
+  budget          Float        @default(0)
+  currency        String       @default("INR")
+  status          TripStatus   @default(PLANNING)
+  
+  coverImage      String?
+  images          String[]
+  
+  travelers       Int          @default(1)
+  isPublic        Boolean      @default(false)
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  // Related
+  stops           TripStop[]
+  activities      Activity[]
+  expenses        Expense[]
+  packingItems    PackingItem[]
+  journalEntries  JournalEntry[]
+  communityPosts  CommunityPost[]
+  budgetPlans     BudgetPlan[]
+  
+  @@map("trips")
+}
+
+model TripStop {
+  id          String   @id @default(uuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  city        String
+  country     String?
+  order       Int
+  arrivalDate DateTime
+  
+  @@map("trip_stops")
+}
+
+model Activity {
+  id          String   @id @default(uuid())
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  title       String
+  description String?
+  category    String   // flight, hotel, sightseeing, dining, etc.
+  
+  startTime   DateTime
+  endTime     DateTime?
+  
+  cost        Float    @default(0)
+  currency    String   @default("INR")
+  
+  location    String?
+  bookingRef  String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("activities")
+}
+
+// ==========================================
+// Budget & Expense Models
+// ==========================================
+
+model Expense {
+  id              String          @id @default(uuid())
+  
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tripId          String?
+  trip            Trip?           @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  
+  category        ExpenseCategory @default(OTHER)
+  description     String
+  amount          Float
+  currency        String          @default("INR")
+  
+  date            DateTime
+  paidBy          String          // user name/id
+  
+  // Split expenses
+  isSplit         Boolean         @default(false)
+  splits          ExpenseSplit[]
+  
+  receiptImage    String?
+  notes           String?
+  
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@map("expenses")
+}
+
+model ExpenseSplit {
+  id          String   @id @default(uuid())
+  expenseId   String
+  expense     Expense  @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  
+  userId      String?
+  userName    String
+  amount      Float
+  share       Int      // percentage
+  isPaid      Boolean  @default(false)
+  
+  @@map("expense_splits")
+}
+
+model Budget {
+  id          String   @id @default(uuid())
+  
+  tripId      String?  @unique
+  totalBudget Float
+  currency    String   @default("INR")
+  
+  // Category allocations
+  flights     Float    @default(0)
+  hotels      Float    @default(0)
+  food        Float    @default(0)
+  activities  Float    @default(0)
+  transport   Float    @default(0)
+  shopping    Float    @default(0)
+  other       Float    @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("budgets")
+}
+
+// ==========================================
+// Packing Assistant Models
+// ==========================================
+
+model PackingItem {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tripId      String?
+  trip        Trip?    @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  name        String
+  category    String   // clothing, documents, electronics, toiletries, medicines, etc.
+  isPacked    Boolean  @default(false)
+  
+  isAISuggested Boolean @default(false)
+  
+  quantity    Int      @default(1)
+  notes       String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("packing_items")
+}
+
+model PackingTemplate {
+  id          String   @id @default(uuid())
+  
+  name        String   // e.g., "Goa Beach Trip", "Winter Europe"
+  description String?
+  
+  items       Json     // array of template items
+  category    String   // beach, adventure, winter, business, etc.
+  
+  isPublic    Boolean  @default(false)
+  createdBy   String?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("packing_templates")
+}
+
+// ==========================================
+// Travel Journal Models
+// ==========================================
+
+model JournalEntry {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tripId      String?
+  trip        Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  
+  title       String
+  content     String   // rich text/HTML
+  
+  destination String?
+  date        DateTime?
+  
+  mood        String?  // happy, relaxed, excited, peaceful, amazed, nostalgic
+  tripType    String?  // adventure, beach, luxury, family, solo, etc.
+  
+  images      String[]
+  rating      Int?     @default(5)
+  
+  isPublic    Boolean  @default(false)
+  
+  // Timeline
+  timelineDay Int?
+  location    String?
+  activity    String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("journal_entries")
+}
+
+// ==========================================
+// Community Models
+// ==========================================
+
+model CommunityPost {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tripId      String?
+  trip        Trip?    @relation(fields: [tripId], references: [id], onDelete: SetNull)
+  
+  type        PostType @default(STORY)
+  
+  title       String
+  content     String
+  
+  destination String?
+  hashtags    String[]
+  
+  images      String[]
+  
+  // Engagement
+  likesCount  Int      @default(0)
+  commentsCount Int  @default(0)
+  
+  isPublic    Boolean  @default(true)
+  isFeatured  Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  comments    Comment[]
+  likes       Like[]
+  
+  @@map("community_posts")
+}
+
+model Comment {
+  id          String   @id @default(uuid())
+  
+  postId      String
+  post        CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  content     String
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("comments")
+}
+
+model Like {
+  id          String   @id @default(uuid())
+  
+  postId      String
+  post        CommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt   DateTime @default(now())
+  
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+// ==========================================
+// Notification Models
+// ==========================================
+
+model Notification {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        NotificationType
+  title       String
+  message     String
+  
+  isRead      Boolean  @default(false)
+  
+  actionUrl   String?
+  actionData  Json?
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("notifications")
+}
+
+// ==========================================
+// Support & Help Models
+// ==========================================
+
+model SupportTicket {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  subject     String
+  description String
+  category    String   // general, technical, billing, feedback
+  
+  status      TicketStatus @default(OPEN)
+  priority    TicketPriority @default(MEDIUM)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("support_tickets")
+}
+
+model FAQ {
+  id          String   @id @default(uuid())
+  
+  question    String
+  answer      String
+  category    String   // general, trips, billing, account, technical
+  
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("faqs")
+}
+
+model Feedback {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  type        String   // general, bug, feature, ui, performance
+  rating      Int      // 1-5 stars
+  message     String?
+  feature     String?  // specific feature being reviewed
+  
+  createdAt   DateTime @default(now())
+  
+  @@map("feedback")
+}
+
+model BudgetPlan {
+  id          String   @id @default(uuid())
+  
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tripId      String
+  trip        Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  
+  totalBudget Float
+  currency    String   @default("INR")
+  categories  Json     // { accommodation: 0.35, food: 0.25, ... }
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@map("budget_plans")
+}
+
+// ==========================================
+// Additional User Relations for new models
+// ==========================================
+
+// ==========================================
+// Enums
+// ==========================================
+
+enum UserRole {
+  USER
+  ADMIN
+  PREMIUM
+}
+
+enum TripType {
+  DOMESTIC
+  INTERNATIONAL
+}
+
+enum TripCategory {
+  LEISURE
+  BUSINESS
+  ADVENTURE
+  FAMILY
+  ROMANTIC
+  SOLO
+}
+
+enum TripStatus {
+  PLANNING
+  BOOKED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ExpenseCategory {
+  FLIGHTS
+  HOTELS
+  FOOD
+  ACTIVITIES
+  SHOPPING
+  TRANSPORT
+  INSURANCE
+  OTHER
+}
+
+enum PostType {
+  STORY
+  QUESTION
+  TIP
+  PHOTO
+  VIDEO
+}
+
+enum NotificationType {
+  TRIP_REMINDER
+  BUDGET_ALERT
+  PACKING_REMINDER
+  COMMUNITY_ENGAGEMENT
+  SYSTEM_UPDATE
+  AI_SUGGESTION
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
