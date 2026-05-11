@@ -134,9 +134,6 @@ Traveloop is developed using a modern full-stack web development environment tha
 
 ## 🚀 Quick Start
 
-### 🌐 Live Demo
-Visit the live demo: [https://travelloop-demo.vercel.app](https://travelloop-demo.vercel.app)
-
 ### 🎮 Demo Mode
 The application runs in demo mode by default - no login required! Simply:
 1. Clone the repository
